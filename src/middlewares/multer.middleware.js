@@ -1,14 +1,23 @@
-import multer from "multer";
+import multer from 'multer';
+import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const storage= multer.diskStorage({
-    destination: function(req, file, cb){
-        cb(null, "./public/temp")                    
-    },  
-    filename: function(req, file, cb){
-        const uniqueSuffix= Date.now() + "-" + Math.round(Math.random()*1E9)
-        cb(null, file.originalname)
-    }       
+const tempDirectory = fileURLToPath(
+  new URL('../../public/temp/', import.meta.url),
+);
+fs.mkdirSync(tempDirectory, { recursive: true });
 
-})
+const storage = multer.diskStorage({
+  destination: (_req, _file, callback) => callback(null, tempDirectory),
+  filename: (_req, file, callback) => {
+    const uniqueName = `${randomUUID()}${path.extname(file.originalname)}`;
+    callback(null, uniqueName);
+  },
+});
 
-const upload= multer({storage: storage})
+export const upload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 },
+});

@@ -1,24 +1,40 @@
-import {v2 as cloudinary} from 'cloudinary'
-import fs from 'fs'
+import { v2 as cloudinary } from 'cloudinary';
+import { access, unlink } from 'node:fs/promises';
 
-cloudinary.config({
-    cloud_name: CLOUDINARY_CLOUD_NAME,
-    api_key: CLOUDINARY_API_KEY,
-    api_secret:CLOUDINARY_API_SECRET
-});
+export const uploadOnCloudinary = async (localFilePath, folder) => {
+  if (!localFilePath) {
+    throw new Error('A local file path is required for upload');
+  }
 
-const uploadonCloudinary=async (file, folder)=>{
-    try{
-        if(!localFileExists(file)){
-            throw new Error("File does not exist")
-        }
-        const response = await cloudinary.uploader.upload(localFilePath,{
-            resource_type: "auto"       
-        })
-        return response
+  try {
+    await access(localFilePath);
+    const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } =
+      process.env;
+    if (
+      !CLOUDINARY_CLOUD_NAME ||
+      !CLOUDINARY_API_KEY ||
+      !CLOUDINARY_API_SECRET
+    ) {
+      throw new Error('Cloudinary credentials are not configured');
     }
-    catch (error) {
-        fs.unlinkSync(localFilePath)
-        return null;
+
+    cloudinary.config({
+      cloud_name: CLOUDINARY_CLOUD_NAME,
+      api_key: CLOUDINARY_API_KEY,
+      api_secret: CLOUDINARY_API_SECRET,
+    });
+    const result = await cloudinary.uploader.upload(localFilePath, {
+      resource_type: 'auto',
+      ...(folder ? { folder } : {}),
+    });
+    return result;
+  } finally {
+    try {
+      await unlink(localFilePath);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
     }
-}
+  }
+};
