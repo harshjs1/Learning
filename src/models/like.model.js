@@ -1,0 +1,24 @@
+
+
+const likeSchema = new Schema({
+    video: {
+        type: Schema.Types.ObjectId,
+        ref: "Video"
+    },
+    comment: {
+        type: Schema.Types.ObjectId,
+        ref: "Comment"
+    },
+    tweet: {
+        type: Schema.Types.ObjectId,
+        ref: "Tweet"
+    },
+    likedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "Usert"
+    
+}
+{timestamp: true}
+)
+
+export const like = mongoose.model("like", likeSchema)
